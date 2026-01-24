@@ -11,6 +11,7 @@ An AI-powered decision intelligence layer that sits between business users and a
 It translates ambiguous questions into structured analytical workflows, executes them safely, and explains _why_ numbers changed — not just _what_ changed.
 
 👉 **Demo / Docs:** _Coming soon_
+👉 **Web repo:** <https://github.com/clash402/data-ghost-web>
 
 ---
 
