@@ -7,8 +7,9 @@ An AI-powered decision intelligence layer that sits between business users and a
 
 ## 1. Elevator Pitch
 
-**Data Ghost** is a decision intelligence layer that allows business users to ask questions in natural language and receive grounded, explainable insights backed by real data.  
-It translates ambiguous questions into structured analytical workflows, executes them safely, and explains _why_ numbers changed — not just _what_ changed.
+**Data Ghost** is a decision intelligence layer that allows business users to ask questions in natural language and receive grounded, explainable insights backed by real data. It translates ambiguous questions into structured analytical workflows, executes them safely, and explains _why_ numbers changed — not just _what_ changed.
+
+Designed for product leaders, analysts, and data-literate operators who need trustworthy explanations, not just dashboards.
 
 👉 **Demo / Docs:** _Coming soon_
 👉 **Web repo:** <https://github.com/clash402/data-ghost-web>
@@ -30,6 +31,8 @@ Conceptually, it acts as a **translator and reasoning layer** between:
 
 - Business users (ambiguous intent)
 - Analytical systems (precise, structured data)
+
+Unlike general-purpose LLMs, Data Ghost cannot produce insights without executed queries and validation against real data.
 
 ---
 
