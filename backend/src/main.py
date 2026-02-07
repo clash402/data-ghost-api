@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 
 from backend.src.core.logging import configure_logging
 from backend.src.core.middleware import RequestIdMiddleware
@@ -17,6 +18,15 @@ init_db()
 
 app = FastAPI(title=settings.app_name)
 app.add_middleware(RequestIdMiddleware)
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=settings.cors_allow_origins,
+    allow_origin_regex=settings.cors_allow_origin_regex,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+    expose_headers=["X-Request-Id"],
+)
 
 
 @app.get("/")

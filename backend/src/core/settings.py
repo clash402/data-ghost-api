@@ -1,10 +1,32 @@
 from __future__ import annotations
 
 from functools import lru_cache
+import json
 import os
 from pathlib import Path
 
-from pydantic import Field
+from pydantic import Field, field_validator
+
+ENV_FILES = (".env", ".env.local")
+
+
+def _load_env_files(paths: tuple[str, ...]) -> dict[str, str]:
+    values: dict[str, str] = {}
+    for path in paths:
+        env_path = Path(path)
+        if not env_path.exists():
+            continue
+        for line in env_path.read_text(encoding="utf-8").splitlines():
+            stripped = line.strip()
+            if not stripped or stripped.startswith("#") or "=" not in stripped:
+                continue
+            key, value = stripped.split("=", 1)
+            key = key.strip()
+            value = value.strip().strip("\"").strip("'")
+            values[key] = value
+    return values
+
+
 try:
     from pydantic_settings import BaseSettings, SettingsConfigDict
 except Exception:  # pragma: no cover - fallback for minimal environments
@@ -12,16 +34,23 @@ except Exception:  # pragma: no cover - fallback for minimal environments
 
     class BaseSettings(BaseModel):
         def __init__(self, **data):
-            merged = {k: v for k, v in os.environ.items()}
-            merged.update(data)
-            super().__init__(**merged)
+            merged = _load_env_files(ENV_FILES)
+            merged.update({k: v for k, v in os.environ.items()})
+
+            normalized = {}
+            for key, value in merged.items():
+                normalized[key] = value
+                normalized[key.lower()] = value
+
+            normalized.update(data)
+            super().__init__(**normalized)
 
     def SettingsConfigDict(**kwargs):
         return kwargs
 
 
 class Settings(BaseSettings):
-    model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")
+    model_config = SettingsConfigDict(env_file=ENV_FILES, env_file_encoding="utf-8", extra="ignore")
 
     app_name: str = "data-ghost-api"
     app_env: str = "dev"
@@ -52,6 +81,30 @@ class Settings(BaseSettings):
     rag_top_k: int = 5
 
     max_upload_mb: int = 20
+    cors_allow_origins: list[str] = Field(
+        default_factory=lambda: ["http://localhost:3000", "http://localhost:5173"],
+        alias="CORS_ALLOW_ORIGINS",
+    )
+    cors_allow_origin_regex: str | None = Field(default=None, alias="CORS_ALLOW_ORIGIN_REGEX")
+
+    @field_validator("cors_allow_origins", mode="before")
+    @classmethod
+    def _parse_cors_allow_origins(cls, value):
+        if value is None:
+            return value
+        if isinstance(value, str):
+            parsed = value.strip()
+            if not parsed:
+                return []
+            if parsed.startswith("["):
+                try:
+                    loaded = json.loads(parsed)
+                    if isinstance(loaded, list):
+                        return [str(item).strip() for item in loaded if str(item).strip()]
+                except json.JSONDecodeError:
+                    pass
+            return [item.strip() for item in parsed.split(",") if item.strip()]
+        return value
 
 
 @lru_cache
