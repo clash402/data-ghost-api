@@ -1,14 +1,12 @@
 from __future__ import annotations
 
-import json
 import uuid
 from typing import Any
 
 from backend.src.core.settings import get_settings
 from backend.src.llm.router import ModelRouter, try_parse_json
 from backend.src.models.graph_state import AgentState
-from backend.src.services.analytics.helpers import pick_metric_column, pick_time_column
-from backend.src.services.analytics.planner import plan_analyses
+from backend.src.services.analytics.dynamic_planner import build_hybrid_query_plan
 from backend.src.services.analytics.validator import validate_results
 from backend.src.services.answer_service import build_charts, build_drivers, synthesize_narrative
 from backend.src.services.context_service import retrieve_context
@@ -112,7 +110,11 @@ def decide_need_clarification_node(state: AgentState) -> AgentState:
     state["intent"].update(_extract_mentions(state["question"], dataset_meta["columns"]))
 
     questions: list[dict[str, Any]] = []
-    if not selected_metric and len(numeric_columns) > 1:
+    asks_numeric_metric = any(
+        token in question
+        for token in ["average", "mean", "sum", "total", "median", "trend", "change", "increase", "decrease", "drop"]
+    )
+    if asks_numeric_metric and not selected_metric and len(numeric_columns) > 1:
         questions.append(
             {
                 "key": "metric",
@@ -145,43 +147,24 @@ def decide_need_clarification_node(state: AgentState) -> AgentState:
 
 def plan_analyses_node(state: AgentState) -> AgentState:
     router = ModelRouter()
-    planning_llm = router.call(
+    planned_queries, diagnostics, planner_cost = build_hybrid_query_plan(
+        router=router,
         request_id=state["request_id"],
-        app="data-ghost-api",
-        task="plan_analyses",
-        system_prompt=(
-            "Plan analytical patterns from dataset schema and user question. "
-            "Return JSON with metric, time_column, top_n if clear."
-        ),
-        user_prompt=json.dumps(
-            {
-                "question": state["question"],
-                "dataset_columns": state["dataset_meta"].get("columns", []),
-                "dataset_schema": state["dataset_meta"].get("schema", {}),
-                "clarifications": state.get("clarifications", {}),
-            }
-        ),
+        question=state["question"],
+        dataset_meta=state["dataset_meta"],
+        clarifications=state["clarifications"],
+        intent=state["intent"],
+        max_queries=get_settings().query_max_per_request,
     )
-    _add_cost(state, planning_llm.model, planning_llm.prompt_tokens, planning_llm.completion_tokens, planning_llm.usd)
-
-    parsed = try_parse_json(planning_llm.text)
-    if parsed.get("metric"):
-        state["intent"]["metric"] = parsed["metric"]
-    if parsed.get("time_column"):
-        state["intent"]["time_column"] = parsed["time_column"]
-    if parsed.get("top_n"):
-        state["intent"]["top_n"] = parsed["top_n"]
-
-    if not state["intent"].get("metric"):
-        state["intent"]["metric"] = pick_metric_column(
-            state["dataset_meta"]["schema"], state["clarifications"].get("metric")
-        )
-    if not state["intent"].get("time_column"):
-        state["intent"]["time_column"] = pick_time_column(
-            state["dataset_meta"]["columns"], state["clarifications"].get("time_column")
+    if planner_cost is not None:
+        _add_cost(
+            state,
+            planner_cost.model,
+            planner_cost.prompt_tokens,
+            planner_cost.completion_tokens,
+            planner_cost.usd,
         )
 
-    planned_queries, diagnostics, _patterns = plan_analyses(state["dataset_meta"], state["intent"])
     state["planned_analyses"] = [
         {
             "name": item["pattern"],

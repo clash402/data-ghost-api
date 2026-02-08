@@ -6,6 +6,29 @@ from typing import Any
 from backend.src.llm.router import ModelRouter, try_parse_json
 
 
+def _first_numeric_key(row: dict[str, Any]) -> str | None:
+    for key, value in row.items():
+        if isinstance(value, bool):
+            continue
+        if isinstance(value, (int, float)):
+            return key
+        try:
+            float(value)
+            return key
+        except Exception:
+            continue
+    return None
+
+
+def _first_categorical_key(row: dict[str, Any], exclude: set[str]) -> str | None:
+    for key, value in row.items():
+        if key in exclude:
+            continue
+        if isinstance(value, str):
+            return key
+    return None
+
+
 def build_drivers(executed_results: list[dict[str, Any]]) -> list[dict[str, Any]]:
     for result in executed_results:
         label = result.get("label", "").lower()
@@ -22,6 +45,27 @@ def build_drivers(executed_results: list[dict[str, Any]]) -> list[dict[str, Any]
                 )
             if output:
                 return output
+
+    for result in executed_results:
+        rows = result.get("rows", [])[:5]
+        if not rows:
+            continue
+        first = rows[0]
+        numeric_key = _first_numeric_key(first)
+        if numeric_key is None:
+            continue
+        name_key = _first_categorical_key(first, exclude={numeric_key}) or "name"
+        output = []
+        for row in rows:
+            output.append(
+                {
+                    "name": str(row.get(name_key, f"row_{len(output) + 1}")),
+                    "contribution": float(row.get(numeric_key, 0.0) or 0.0),
+                    "evidence": row,
+                }
+            )
+        if output:
+            return output
 
     return []
 
@@ -43,8 +87,12 @@ def build_charts(executed_results: list[dict[str, Any]]) -> list[dict[str, Any]]
         if not rows:
             continue
         first = rows[0]
-        x_key = next((k for k in first.keys() if k in {"segment", "x", "dt", "date"}), None)
-        y_key = next((k for k in first.keys() if k in {"contribution", "delta", "y", "metric_value"}), None)
+        y_key = next((k for k in first.keys() if k in {"contribution", "delta", "y", "metric_value", "frequency"}), None)
+        if y_key is None:
+            y_key = _first_numeric_key(first)
+        x_key = next((k for k in first.keys() if k in {"segment", "x", "dt", "date", "value"}), None)
+        if x_key is None and y_key is not None:
+            x_key = _first_categorical_key(first, exclude={y_key})
         if x_key and y_key:
             charts.append(
                 {

@@ -77,6 +77,7 @@ class AskResponse(BaseModel):
 
 
 class DatasetSummaryResponse(BaseModel):
+    dataset_uploaded: bool = True
     dataset_id: str
     name: str
     table_name: str
@@ -93,6 +94,11 @@ class DatasetUploadResponse(BaseModel):
     rows: int
     columns: list[str]
     schema_: dict[str, str] = Field(serialization_alias="schema")
+
+
+class DatasetSummaryNotReadyResponse(BaseModel):
+    dataset_uploaded: bool = False
+    message: str = "No dataset uploaded yet. Upload a CSV via POST /upload/dataset."
 
 
 class ContextUploadResponse(BaseModel):
