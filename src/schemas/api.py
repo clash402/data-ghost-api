@@ -76,6 +76,17 @@ class AskResponse(BaseModel):
     answer: AnswerPayload | None = None
 
 
+class VoiceSpeakRequest(BaseModel):
+    text: str
+    voice_id: str | None = None
+
+
+class VoiceTranscribeResponse(BaseModel):
+    text: str
+    provider: str = "openai"
+    model: str
+
+
 class DatasetSummaryResponse(BaseModel):
     dataset_uploaded: bool = True
     dataset_id: str
