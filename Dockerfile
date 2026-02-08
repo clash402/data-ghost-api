@@ -7,7 +7,7 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 WORKDIR /app
 
 COPY pyproject.toml /app/pyproject.toml
-COPY backend /app/backend
+COPY src /app/src
 COPY main.py /app/main.py
 
 RUN python -m pip install --upgrade pip && \
@@ -15,4 +15,4 @@ RUN python -m pip install --upgrade pip && \
 
 EXPOSE 8080
 
-CMD ["uvicorn", "backend.src.main:app", "--host", "0.0.0.0", "--port", "8080"]
+CMD ["uvicorn", "src.main:app", "--host", "0.0.0.0", "--port", "8080"]
