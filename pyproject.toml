@@ -34,12 +34,13 @@ include-package-data = true
 
 [tool.setuptools.packages.find]
 where = ["."]
-include = ["backend*"]
+include = ["src*"]
 
 [tool.black]
 line-length = 100
 target-version = ["py311"]
 
 [tool.pytest.ini_options]
-testpaths = ["backend/tests"]
+testpaths = ["tests"]
+pythonpath = ["."]
 addopts = "-q"
