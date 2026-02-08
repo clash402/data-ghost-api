@@ -309,6 +309,8 @@ def finalize_response_node(state: AgentState) -> AgentState:
 
 
 def _should_continue(state: AgentState) -> str:
+    if state.get("status") == "dataset_not_ready":
+        return "needs_clarification"
     if state.get("needs_clarification"):
         return "needs_clarification"
     return "continue"
@@ -318,7 +320,7 @@ def _fallback_run(initial_state: AgentState) -> AgentState:
     state = parse_intent_node(initial_state)
     state = check_dataset_ready_node(state)
     state = decide_need_clarification_node(state)
-    if state.get("needs_clarification"):
+    if state.get("status") == "dataset_not_ready" or state.get("needs_clarification"):
         return finalize_response_node(state)
 
     state = plan_analyses_node(state)
