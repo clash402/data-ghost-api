@@ -83,16 +83,18 @@ def _normalize_row(row: dict[str, str], schema: dict[str, str]) -> dict[str, Any
 
 def ingest_csv(filename: str, content: bytes) -> DatasetSummary:
     decoded = content.decode("utf-8-sig")
-    reader = csv.DictReader(io.StringIO(decoded))
-    if reader.fieldnames is None:
+    reader = csv.reader(io.StringIO(decoded))
+    header_row = next(reader, None)
+    if header_row is None:
         raise ValueError("CSV is missing header row")
 
-    columns = _dedupe_columns([slugify_identifier(name) for name in reader.fieldnames])
-    header_mapping = dict(zip(reader.fieldnames, columns, strict=False))
+    columns = _dedupe_columns([slugify_identifier(name) for name in header_row])
 
     raw_rows: list[dict[str, str]] = []
-    for row in reader:
-        mapped = {header_mapping[k]: (v or "") for k, v in row.items() if k is not None}
+    for values in reader:
+        if len(values) < len(columns):
+            values = [*values, *([""] * (len(columns) - len(values)))]
+        mapped = {column: (values[idx] if idx < len(values) else "") for idx, column in enumerate(columns)}
         raw_rows.append(mapped)
 
     if not raw_rows:
