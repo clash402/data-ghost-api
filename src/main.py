@@ -11,6 +11,7 @@ from src.routers.ask import router as ask_router
 from src.routers.dataset import router as dataset_router
 from src.routers.health import router as health_router
 from src.routers.upload import router as upload_router
+from src.routers.voice import router as voice_router
 
 settings = get_settings()
 configure_logging()
@@ -38,3 +39,4 @@ app.include_router(health_router)
 app.include_router(upload_router)
 app.include_router(dataset_router)
 app.include_router(ask_router)
+app.include_router(voice_router)

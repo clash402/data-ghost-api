@@ -287,6 +287,41 @@ Detailed setup, configuration, and API usage are documented separately.
 
 ---
 
+## Voice API (STT + TTS)
+
+Two backend voice endpoints are available for one-shot transcription and speech synthesis:
+
+- `POST /voice/transcribe`
+  - `Content-Type: multipart/form-data`
+  - Required field: `file` (audio upload)
+  - Optional field: `language` (for example `en`)
+  - Supported audio MIME/types and extensions: `audio/webm`, `audio/mp4`, `audio/mpeg`, `audio/wav`, `audio/ogg`, `.webm`, `.mp4`, `.mp3`, `.wav`, `.ogg`, `.m4a`
+  - Response JSON: `text`, `provider`, `model`
+- `POST /voice/speak`
+  - `Content-Type: application/json`
+  - Request JSON: `text` (required), `voice_id` (optional override)
+  - Response: `audio/mpeg` stream with `Content-Disposition: inline; filename=\"data-ghost-response.mp3\"`
+
+Required environment variables for production voice usage:
+
+- `OPENAI_API_KEY`
+- `ELEVENLABS_API_KEY`
+- `ELEVENLABS_VOICE_ID` (unless passed per request via `voice_id`)
+
+Optional voice configuration:
+
+- `OPENAI_STT_MODEL` (default: `gpt-4o-mini-transcribe`)
+- `ELEVENLABS_MODEL_ID` (default: `eleven_multilingual_v2`)
+- `ELEVENLABS_OUTPUT_FORMAT` (default: `mp3_44100_128`)
+- `VOICE_MAX_UPLOAD_MB` (default: `15`)
+- `VOICE_MAX_TTS_CHARS` (default: `3000`)
+
+Privacy note:
+
+- Uploaded audio and generated speech are handled in-memory and are not persisted to disk or DB by default.
+
+---
+
 ## 14. Principal-Level Case Study (Cross-Project)
 
 Data Ghost is one layer in a broader intelligent systems stack:

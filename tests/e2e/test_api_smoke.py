@@ -101,6 +101,14 @@ def test_health_and_root_contract(live_server: str) -> None:
     assert root.json() == {"message": "Data Ghost API"}
 
 
+def test_voice_routes_are_available_in_openapi(live_server: str) -> None:
+    response = httpx.get(f"{live_server}/openapi.json", timeout=5)
+    assert response.status_code == 200
+    paths = response.json()["paths"]
+    assert "/voice/transcribe" in paths
+    assert "/voice/speak" in paths
+
+
 def test_full_journey_upload_ask_and_summary(live_server: str) -> None:
     csv_content = "date,segment,revenue\n2025-01-01,A,100\n2025-01-02,A,120\n2025-01-08,B,80\n"
 

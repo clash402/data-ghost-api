@@ -22,7 +22,7 @@ def _load_env_files(paths: tuple[str, ...]) -> dict[str, str]:
                 continue
             key, value = stripped.split("=", 1)
             key = key.strip()
-            value = value.strip().strip("\"").strip("'")
+            value = value.strip().strip('"').strip("'")
             values[key] = value
     return values
 
@@ -68,6 +68,7 @@ class Settings(BaseSettings):
 
     llm_openai_api_key: str | None = Field(default=None, alias="OPENAI_API_KEY")
     llm_anthropic_api_key: str | None = Field(default=None, alias="ANTHROPIC_API_KEY")
+    openai_stt_model: str = Field(default="gpt-4o-mini-transcribe", alias="OPENAI_STT_MODEL")
 
     llm_price_prompt_per_1k: float = 0.001
     llm_price_completion_per_1k: float = 0.002
@@ -79,6 +80,13 @@ class Settings(BaseSettings):
     rag_chunk_size: int = 800
     rag_chunk_overlap: int = 100
     rag_top_k: int = 5
+
+    elevenlabs_api_key: str | None = Field(default=None, alias="ELEVENLABS_API_KEY")
+    elevenlabs_voice_id: str | None = Field(default=None, alias="ELEVENLABS_VOICE_ID")
+    elevenlabs_model_id: str = Field(default="eleven_multilingual_v2", alias="ELEVENLABS_MODEL_ID")
+    elevenlabs_output_format: str = Field(default="mp3_44100_128", alias="ELEVENLABS_OUTPUT_FORMAT")
+    voice_max_upload_mb: int = Field(default=15, alias="VOICE_MAX_UPLOAD_MB")
+    voice_max_tts_chars: int = Field(default=3000, alias="VOICE_MAX_TTS_CHARS")
 
     max_upload_mb: int = 20
     cors_allow_origins: list[str] = Field(
