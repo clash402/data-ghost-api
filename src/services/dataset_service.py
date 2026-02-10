@@ -7,6 +7,7 @@ from dataclasses import dataclass
 from datetime import datetime
 from typing import Any
 
+from src.core.settings import get_settings
 from src.db.session import get_connection
 from src.storage.repositories import get_dataset_meta, upsert_dataset_meta
 from src.utils.strings import slugify_identifier
@@ -82,16 +83,25 @@ def _normalize_row(row: dict[str, str], schema: dict[str, str]) -> dict[str, Any
 
 
 def ingest_csv(filename: str, content: bytes) -> DatasetSummary:
+    settings = get_settings()
     decoded = content.decode("utf-8-sig")
     reader = csv.reader(io.StringIO(decoded))
     header_row = next(reader, None)
     if header_row is None:
         raise ValueError("CSV is missing header row")
+    if len(header_row) > settings.dataset_max_columns:
+        raise ValueError(
+            f"CSV exceeds maximum column count ({settings.dataset_max_columns})"
+        )
 
     columns = _dedupe_columns([slugify_identifier(name) for name in header_row])
 
     raw_rows: list[dict[str, str]] = []
     for values in reader:
+        if len(raw_rows) >= settings.dataset_max_rows:
+            raise ValueError(
+                f"CSV exceeds maximum row count ({settings.dataset_max_rows})"
+            )
         if len(values) < len(columns):
             values = [*values, *([""] * (len(columns) - len(values)))]
         mapped = {column: (values[idx] if idx < len(values) else "") for idx, column in enumerate(columns)}

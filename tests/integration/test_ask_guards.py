@@ -48,11 +48,16 @@ def test_ask_without_dataset_returns_dataset_required_and_logs_request() -> None
     assert row is not None
     assert row["question"] == "Why did revenue drop last week?"
     assert row["status"] == "completed"
-    assert len(json.loads(row["models_json"])) >= 1
+    assert json.loads(row["models_json"]) == []
 
     logged_response = json.loads(row["response_json"])
     assert logged_response["needs_clarification"] is False
     assert logged_response["answer"]["headline"] == "Dataset required"
+
+    with get_connection() as conn:
+        cost_rows = conn.execute("SELECT COUNT(*) AS count FROM cost_ledger").fetchone()
+    assert cost_rows is not None
+    assert cost_rows["count"] == 0
 
 
 def test_ask_ambiguous_question_requests_metric_and_time_clarifications() -> None:

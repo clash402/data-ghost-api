@@ -188,3 +188,25 @@ def insert_cost_ledger(
                 json.dumps(metadata),
             ),
         )
+
+
+def get_request_spend_usd(request_id: str) -> float:
+    with get_connection() as conn:
+        row = conn.execute(
+            "SELECT COALESCE(SUM(usd), 0.0) AS total_usd FROM cost_ledger WHERE request_id = ?",
+            (request_id,),
+        ).fetchone()
+    if row is None:
+        return 0.0
+    return float(row["total_usd"] or 0.0)
+
+
+def get_global_spend_usd_since(created_at_iso: str) -> float:
+    with get_connection() as conn:
+        row = conn.execute(
+            "SELECT COALESCE(SUM(usd), 0.0) AS total_usd FROM cost_ledger WHERE created_at >= ?",
+            (created_at_iso,),
+        ).fetchone()
+    if row is None:
+        return 0.0
+    return float(row["total_usd"] or 0.0)

@@ -29,7 +29,16 @@ def _init_test_environment() -> None:
 
 @pytest.fixture(autouse=True)
 def _reset_database_state() -> None:
+    from src.core.settings import get_settings
     from src.db.session import get_connection
+    from src.services.ask_cache_service import clear_ask_cache
+    from src.services.rate_limit_service import clear_rate_limit_state
+    from src.services.voice_cache_service import clear_voice_cache
+
+    get_settings.cache_clear()
+    clear_ask_cache()
+    clear_rate_limit_state()
+    clear_voice_cache()
 
     with get_connection() as conn:
         dataset_tables = conn.execute("SELECT table_name FROM dataset_meta").fetchall()
@@ -41,3 +50,5 @@ def _reset_database_state() -> None:
         conn.execute("DELETE FROM requests")
         conn.execute("DELETE FROM cost_ledger")
         conn.execute("DELETE FROM dataset_meta")
+
+    get_settings.cache_clear()

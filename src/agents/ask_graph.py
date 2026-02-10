@@ -48,6 +48,7 @@ def _extract_mentions(question: str, columns: list[str]) -> dict[str, str]:
 
 def parse_intent_node(state: AgentState) -> AgentState:
     router = ModelRouter()
+    existing_intent = dict(state.get("intent") or {})
     llm = router.call(
         request_id=state["request_id"],
         app="data-ghost-api",
@@ -59,6 +60,7 @@ def parse_intent_node(state: AgentState) -> AgentState:
         prefer_expensive=False,
     )
     parsed = try_parse_json(llm.text)
+    parsed.update(existing_intent)
     parsed["raw_question"] = state["question"]
     state["intent"] = parsed
     _add_cost(state, llm.model, llm.prompt_tokens, llm.completion_tokens, llm.usd)
@@ -317,12 +319,12 @@ def _should_continue(state: AgentState) -> str:
 
 
 def _fallback_run(initial_state: AgentState) -> AgentState:
-    state = parse_intent_node(initial_state)
-    state = check_dataset_ready_node(state)
+    state = check_dataset_ready_node(initial_state)
     state = decide_need_clarification_node(state)
     if state.get("status") == "dataset_not_ready" or state.get("needs_clarification"):
         return finalize_response_node(state)
 
+    state = parse_intent_node(state)
     state = plan_analyses_node(state)
     state = execute_queries_node(state)
     state = validate_results_node(state)
@@ -346,17 +348,17 @@ def build_ask_graph():
     graph.add_node("synthesize_explanation", synthesize_explanation_node)
     graph.add_node("finalize_response", finalize_response_node)
 
-    graph.set_entry_point("parse_intent")
-    graph.add_edge("parse_intent", "check_dataset_ready")
+    graph.set_entry_point("check_dataset_ready")
     graph.add_edge("check_dataset_ready", "decide_need_clarification")
     graph.add_conditional_edges(
         "decide_need_clarification",
         _should_continue,
         {
             "needs_clarification": "finalize_response",
-            "continue": "plan_analyses",
+            "continue": "parse_intent",
         },
     )
+    graph.add_edge("parse_intent", "plan_analyses")
     graph.add_edge("plan_analyses", "execute_queries")
     graph.add_edge("execute_queries", "validate_results")
     graph.add_edge("validate_results", "retrieve_context")

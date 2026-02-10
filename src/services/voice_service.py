@@ -6,6 +6,11 @@ from src.core.settings import get_settings
 from src.integrations.elevenlabs_speech import synthesize_speech
 from src.integrations.openai_speech import transcribe_audio
 from src.schemas.api import VoiceTranscribeResponse
+from src.services.voice_cache_service import (
+    build_voice_cache_key,
+    get_cached_voice_audio,
+    set_cached_voice_audio,
+)
 
 _ALLOWED_AUDIO_MIME_TYPES = {
     "audio/webm",
@@ -142,6 +147,8 @@ def transcribe_voice_upload(
     language: str | None,
 ) -> VoiceTranscribeResponse:
     settings = get_settings()
+    if not settings.llm_enabled:
+        raise VoiceConfigError("Voice features are disabled by configuration (LLM_ENABLED=false).")
 
     _validate_audio_upload(filename, content_type, content, settings.voice_max_upload_mb)
 
@@ -167,6 +174,8 @@ def transcribe_voice_upload(
 
 def synthesize_voice(*, text: str, voice_id: str | None) -> bytes:
     settings = get_settings()
+    if not settings.llm_enabled:
+        raise VoiceConfigError("Voice features are disabled by configuration (LLM_ENABLED=false).")
     normalized_text = _normalize_text(text, settings.voice_max_tts_chars)
 
     if not settings.elevenlabs_api_key:
@@ -180,14 +189,30 @@ def synthesize_voice(*, text: str, voice_id: str | None) -> bytes:
             "Voice synthesis is unavailable because ELEVENLABS_VOICE_ID is not configured"
         )
 
+    cache_key = build_voice_cache_key(
+        text=normalized_text,
+        voice_id=selected_voice_id,
+        model_id=settings.elevenlabs_model_id,
+        output_format=settings.elevenlabs_output_format,
+    )
+    cached = get_cached_voice_audio(cache_key)
+    if cached is not None:
+        return cached
+
     try:
-        return synthesize_speech(
+        audio_bytes = synthesize_speech(
             text=normalized_text,
             voice_id=selected_voice_id,
             model_id=settings.elevenlabs_model_id,
             output_format=settings.elevenlabs_output_format,
             api_key=settings.elevenlabs_api_key,
         )
+        set_cached_voice_audio(
+            cache_key=cache_key,
+            audio_bytes=audio_bytes,
+            ttl_seconds=settings.voice_cache_ttl_seconds,
+        )
+        return audio_bytes
     except Exception as exc:
         detail = _extract_provider_error_detail(exc)
         raise VoiceProviderError(f"Voice synthesis provider request failed ({detail})") from exc

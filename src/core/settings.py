@@ -69,6 +69,10 @@ class Settings(BaseSettings):
     llm_openai_api_key: str | None = Field(default=None, alias="OPENAI_API_KEY")
     llm_anthropic_api_key: str | None = Field(default=None, alias="ANTHROPIC_API_KEY")
     openai_stt_model: str = Field(default="gpt-4o-mini-transcribe", alias="OPENAI_STT_MODEL")
+    llm_enabled: bool = Field(default=True, alias="LLM_ENABLED")
+    llm_max_usd_per_request: float = Field(default=0.03, alias="LLM_MAX_USD_PER_REQUEST")
+    llm_max_usd_per_day: float = Field(default=2.0, alias="LLM_MAX_USD_PER_DAY")
+    llm_estimated_completion_tokens: int = Field(default=600, alias="LLM_ESTIMATED_COMPLETION_TOKENS")
 
     llm_price_prompt_per_1k: float = 0.001
     llm_price_completion_per_1k: float = 0.002
@@ -81,12 +85,24 @@ class Settings(BaseSettings):
     rag_chunk_overlap: int = 100
     rag_top_k: int = 5
 
+    ask_cache_ttl_seconds: int = Field(default=600, alias="ASK_CACHE_TTL_SECONDS")
+    ask_rate_limit_per_minute: int = Field(default=30, alias="ASK_RATE_LIMIT_PER_MINUTE")
+    ask_rate_limit_per_hour: int = Field(default=300, alias="ASK_RATE_LIMIT_PER_HOUR")
+    voice_rate_limit_per_minute: int = Field(default=20, alias="VOICE_RATE_LIMIT_PER_MINUTE")
+    voice_rate_limit_per_hour: int = Field(default=200, alias="VOICE_RATE_LIMIT_PER_HOUR")
+
     elevenlabs_api_key: str | None = Field(default=None, alias="ELEVENLABS_API_KEY")
     elevenlabs_voice_id: str | None = Field(default=None, alias="ELEVENLABS_VOICE_ID")
     elevenlabs_model_id: str = Field(default="eleven_multilingual_v2", alias="ELEVENLABS_MODEL_ID")
     elevenlabs_output_format: str = Field(default="mp3_44100_128", alias="ELEVENLABS_OUTPUT_FORMAT")
     voice_max_upload_mb: int = Field(default=15, alias="VOICE_MAX_UPLOAD_MB")
     voice_max_tts_chars: int = Field(default=3000, alias="VOICE_MAX_TTS_CHARS")
+    voice_cache_ttl_seconds: int = Field(default=1800, alias="VOICE_CACHE_TTL_SECONDS")
+
+    dataset_max_upload_mb: int = Field(default=10, alias="DATASET_MAX_UPLOAD_MB")
+    context_max_upload_mb: int = Field(default=10, alias="CONTEXT_MAX_UPLOAD_MB")
+    dataset_max_rows: int = Field(default=10000, alias="DATASET_MAX_ROWS")
+    dataset_max_columns: int = Field(default=150, alias="DATASET_MAX_COLUMNS")
 
     max_upload_mb: int = 20
     cors_allow_origins: list[str] = Field(
