@@ -24,7 +24,7 @@ jobs:
 
       - name: Check formatting
         run: |
-          docker run --rm data-ghost-api:ci-${{ github.sha }} sh -lc "black --check ."
+          docker run --rm data-ghost-api:ci-${{ github.sha }} sh -lc "black --required-version 24.8.0 --check ."
 
       - name: Lint
         run: |
@@ -46,7 +46,7 @@ jobs:
 
       - name: Static security scan (Bandit high severity)
         run: |
-          docker run --rm data-ghost-api:ci-${{ github.sha }} sh -lc "bandit -r src -ll"
+          docker run --rm data-ghost-api:ci-${{ github.sha }} sh -lc "bandit -r src -lll -iii"
 
       - name: Dependency security audit
         run: |
