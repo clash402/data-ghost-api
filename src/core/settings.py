@@ -50,7 +50,12 @@ except Exception:  # pragma: no cover - fallback for minimal environments
 
 
 class Settings(BaseSettings):
-    model_config = SettingsConfigDict(env_file=ENV_FILES, env_file_encoding="utf-8", extra="ignore")
+    model_config = SettingsConfigDict(
+        env_file=ENV_FILES,
+        env_file_encoding="utf-8",
+        extra="ignore",
+        enable_decoding=False,
+    )
 
     app_name: str = "data-ghost-api"
     app_env: str = "dev"
