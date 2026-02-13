@@ -31,7 +31,7 @@ def _mentioned_columns(question: str, columns: list[str]) -> list[str]:
 
 
 def _build_frequency_query(table_name: str, column: str, limit: int = 20) -> dict[str, str]:
-    sql = f'''
+    sql = f"""
 SELECT
   COALESCE(CAST("{column}" AS TEXT), '(null)') AS value,
   COUNT(*) AS frequency
@@ -39,7 +39,7 @@ FROM "{table_name}"
 GROUP BY value
 ORDER BY frequency DESC, value ASC
 LIMIT {limit}
-'''.strip()
+""".strip()
     return {
         "label": f"Most common values for {column}",
         "sql": sql,
@@ -130,7 +130,9 @@ def _question_needs_advanced_planning(question: str) -> bool:
     return any(marker in lowered for marker in advanced_markers)
 
 
-def _build_llm_prompt_payload(question: str, dataset_meta: dict[str, Any], clarifications: dict[str, Any]) -> dict[str, Any]:
+def _build_llm_prompt_payload(
+    question: str, dataset_meta: dict[str, Any], clarifications: dict[str, Any]
+) -> dict[str, Any]:
     return {
         "question": question,
         "table_name": dataset_meta["table_name"],
@@ -242,9 +244,13 @@ def build_hybrid_query_plan(
     if _include_prebuilt_patterns(question):
         normalized_intent = dict(intent)
         if not normalized_intent.get("metric"):
-            normalized_intent["metric"] = pick_metric_column(dataset_meta["schema"], clarifications.get("metric"))
+            normalized_intent["metric"] = pick_metric_column(
+                dataset_meta["schema"], clarifications.get("metric")
+            )
         if not normalized_intent.get("time_column"):
-            normalized_intent["time_column"] = pick_time_column(dataset_meta["columns"], clarifications.get("time_column"))
+            normalized_intent["time_column"] = pick_time_column(
+                dataset_meta["columns"], clarifications.get("time_column")
+            )
         pattern_queries, pattern_diagnostics, _ = plan_analyses(dataset_meta, normalized_intent)
         planned.extend(pattern_queries)
         diagnostics.extend(pattern_diagnostics)
@@ -257,12 +263,14 @@ def build_hybrid_query_plan(
             task="plan_sql_queries",
             system_prompt=(
                 "You are a SQL planning assistant for SQLite. Given a user question and a table schema, "
-                "return JSON: {\"queries\":[{\"label\":string,\"sql\":string}]}. "
+                'return JSON: {"queries":[{"label":string,"sql":string}]}. '
                 "Rules: use ONLY SELECT/CTE statements; use ONLY provided table and columns; "
                 "prefer 1-3 queries; include aggregation/grouping when needed; quote identifiers with double quotes; "
                 "for raw rows include LIMIT <= 200."
             ),
-            user_prompt=json.dumps(_build_llm_prompt_payload(question, dataset_meta, clarifications)),
+            user_prompt=json.dumps(
+                _build_llm_prompt_payload(question, dataset_meta, clarifications)
+            ),
             prefer_expensive=False,
         )
         planner_cost = PlannerCost(

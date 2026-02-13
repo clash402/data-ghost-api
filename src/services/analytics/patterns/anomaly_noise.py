@@ -15,13 +15,17 @@ def build_anomaly_noise_check(
 
     plan = PatternPlan(name="anomaly_noise_check")
     if not metric:
-        plan.diagnostics.append({"code": "MISSING_METRIC", "message": "No numeric metric column found"})
+        plan.diagnostics.append(
+            {"code": "MISSING_METRIC", "message": "No numeric metric column found"}
+        )
         return plan
     if not time_col:
-        plan.diagnostics.append({"code": "MISSING_TIME_COLUMN", "message": "No time-like column found"})
+        plan.diagnostics.append(
+            {"code": "MISSING_TIME_COLUMN", "message": "No time-like column found"}
+        )
         return plan
 
-    sql = f'''
+    sql = f"""
 WITH daily AS (
   SELECT DATE("{time_col}") AS dt, SUM(CAST("{metric}" AS REAL)) AS metric_value
   FROM "{table_name}"
@@ -52,7 +56,7 @@ SELECT
     ELSE 'likely_noise'
   END AS signal
 FROM latest, stats
-'''.strip()
+""".strip()
 
     plan.queries.append({"label": "Anomaly vs noise", "query": sql})
     return plan

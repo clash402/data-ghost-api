@@ -36,7 +36,9 @@ class ModelRouter:
                 f"${self.settings.llm_max_usd_per_request:.4f}"
             )
 
-        today_start = datetime.now(tz=UTC).replace(hour=0, minute=0, second=0, microsecond=0).isoformat()
+        today_start = (
+            datetime.now(tz=UTC).replace(hour=0, minute=0, second=0, microsecond=0).isoformat()
+        )
         daily_spend = get_global_spend_usd_since(today_start)
         projected_daily_spend = daily_spend + estimated_usd
         if projected_daily_spend > self.settings.llm_max_usd_per_day:
@@ -55,7 +57,9 @@ class ModelRouter:
         user_prompt: str,
         prefer_expensive: bool = False,
     ) -> LlmCallResult:
-        model = self.settings.llm_expensive_model if prefer_expensive else self.settings.llm_cheap_model
+        model = (
+            self.settings.llm_expensive_model if prefer_expensive else self.settings.llm_cheap_model
+        )
         if task == "synthesize_explanation":
             model = self.settings.llm_expensive_model
         elif task == "default":
@@ -69,12 +73,18 @@ class ModelRouter:
         estimated_usd = self._estimate_price(prompt_tokens, estimated_completion_tokens)
         self._enforce_budget(request_id=request_id, estimated_usd=estimated_usd)
 
-        result = self.provider.call(model=model, prompt=LlmPrompt(system=system_prompt, user=user_prompt))
+        result = self.provider.call(
+            model=model, prompt=LlmPrompt(system=system_prompt, user=user_prompt)
+        )
         persist_ledger(
             request_id=request_id,
             app=app,
             result=result,
-            metadata={"task": task, "system_prompt_preview": system_prompt[:160], "user_prompt_preview": user_prompt[:160]},
+            metadata={
+                "task": task,
+                "system_prompt_preview": system_prompt[:160],
+                "user_prompt_preview": user_prompt[:160],
+            },
         )
         return result
 

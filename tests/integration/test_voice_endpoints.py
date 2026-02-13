@@ -113,7 +113,9 @@ def test_speak_success_returns_audio_mpeg_bytes(monkeypatch: pytest.MonkeyPatch)
     assert response.content == b"audio-bytes"
 
 
-def test_speak_reuses_cached_audio_for_identical_text_and_voice(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_speak_reuses_cached_audio_for_identical_text_and_voice(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     monkeypatch.setenv("ELEVENLABS_API_KEY", "test-elevenlabs-key")
     monkeypatch.setenv("ELEVENLABS_VOICE_ID", "voice_123")
     monkeypatch.setenv("VOICE_CACHE_TTL_SECONDS", "600")

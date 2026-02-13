@@ -39,7 +39,9 @@ def build_drivers(executed_results: list[dict[str, Any]]) -> list[dict[str, Any]
                 output.append(
                     {
                         "name": str(row.get("segment", row.get("name", "segment"))),
-                        "contribution": float(row.get("contribution", row.get("delta", 0.0)) or 0.0),
+                        "contribution": float(
+                            row.get("contribution", row.get("delta", 0.0)) or 0.0
+                        ),
                         "evidence": row,
                     }
                 )
@@ -75,9 +77,18 @@ def build_charts(executed_results: list[dict[str, Any]]) -> list[dict[str, Any]]
 
     for result in executed_results:
         if result.get("label") == "Trend series":
-            points = [{"x": row.get("x"), "y": float(row.get("y", 0.0) or 0.0)} for row in result.get("rows", [])]
+            points = [
+                {"x": row.get("x"), "y": float(row.get("y", 0.0) or 0.0)}
+                for row in result.get("rows", [])
+            ]
             if points:
-                charts.append({"kind": "line", "title": "Metric trend (latest 30 periods)", "data": list(reversed(points))})
+                charts.append(
+                    {
+                        "kind": "line",
+                        "title": "Metric trend (latest 30 periods)",
+                        "data": list(reversed(points)),
+                    }
+                )
 
     if charts:
         return charts
@@ -87,10 +98,19 @@ def build_charts(executed_results: list[dict[str, Any]]) -> list[dict[str, Any]]
         if not rows:
             continue
         first = rows[0]
-        y_key = next((k for k in first.keys() if k in {"contribution", "delta", "y", "metric_value", "frequency"}), None)
+        y_key = next(
+            (
+                k
+                for k in first.keys()
+                if k in {"contribution", "delta", "y", "metric_value", "frequency"}
+            ),
+            None,
+        )
         if y_key is None:
             y_key = _first_numeric_key(first)
-        x_key = next((k for k in first.keys() if k in {"segment", "x", "dt", "date", "value"}), None)
+        x_key = next(
+            (k for k in first.keys() if k in {"segment", "x", "dt", "date", "value"}), None
+        )
         if x_key is None and y_key is not None:
             x_key = _first_categorical_key(first, exclude={y_key})
         if x_key and y_key:
@@ -98,7 +118,10 @@ def build_charts(executed_results: list[dict[str, Any]]) -> list[dict[str, Any]]
                 {
                     "kind": "line",
                     "title": f"{result['label']} signal",
-                    "data": [{"x": row.get(x_key), "y": float(row.get(y_key, 0.0) or 0.0)} for row in rows[:30]],
+                    "data": [
+                        {"x": row.get(x_key), "y": float(row.get(y_key, 0.0) or 0.0)}
+                        for row in rows[:30]
+                    ],
                 }
             )
             break
@@ -143,7 +166,11 @@ def synthesize_narrative(
     )
     parsed = try_parse_json(llm.text)
     headline = str(parsed.get("headline") or "Analysis summary")
-    narrative = str(parsed.get("narrative") or parsed.get("summary") or "SQL results were executed and summarized.")
+    narrative = str(
+        parsed.get("narrative")
+        or parsed.get("summary")
+        or "SQL results were executed and summarized."
+    )
 
     return (
         headline,

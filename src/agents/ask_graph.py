@@ -29,7 +29,9 @@ def _base_cost_trace() -> dict[str, Any]:
     }
 
 
-def _add_cost(state: AgentState, model: str, prompt_tokens: int, completion_tokens: int, usd: float) -> None:
+def _add_cost(
+    state: AgentState, model: str, prompt_tokens: int, completion_tokens: int, usd: float
+) -> None:
     cost = state["cost_trace"]
     if model not in cost["models"]:
         cost["models"].append(model)
@@ -114,7 +116,18 @@ def decide_need_clarification_node(state: AgentState) -> AgentState:
     questions: list[dict[str, Any]] = []
     asks_numeric_metric = any(
         token in question
-        for token in ["average", "mean", "sum", "total", "median", "trend", "change", "increase", "decrease", "drop"]
+        for token in [
+            "average",
+            "mean",
+            "sum",
+            "total",
+            "median",
+            "trend",
+            "change",
+            "increase",
+            "decrease",
+            "drop",
+        ]
     )
     if asks_numeric_metric and not selected_metric and len(numeric_columns) > 1:
         questions.append(
@@ -126,7 +139,10 @@ def decide_need_clarification_node(state: AgentState) -> AgentState:
             }
         )
 
-    asks_change = any(token in question for token in ["change", "trend", "drop", "increase", "decrease", "week", "month"])
+    asks_change = any(
+        token in question
+        for token in ["change", "trend", "drop", "increase", "decrease", "week", "month"]
+    )
     if asks_change and not selected_time and len(time_columns) > 1:
         questions.append(
             {

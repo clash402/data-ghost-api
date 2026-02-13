@@ -90,21 +90,19 @@ def ingest_csv(filename: str, content: bytes) -> DatasetSummary:
     if header_row is None:
         raise ValueError("CSV is missing header row")
     if len(header_row) > settings.dataset_max_columns:
-        raise ValueError(
-            f"CSV exceeds maximum column count ({settings.dataset_max_columns})"
-        )
+        raise ValueError(f"CSV exceeds maximum column count ({settings.dataset_max_columns})")
 
     columns = _dedupe_columns([slugify_identifier(name) for name in header_row])
 
     raw_rows: list[dict[str, str]] = []
     for values in reader:
         if len(raw_rows) >= settings.dataset_max_rows:
-            raise ValueError(
-                f"CSV exceeds maximum row count ({settings.dataset_max_rows})"
-            )
+            raise ValueError(f"CSV exceeds maximum row count ({settings.dataset_max_rows})")
         if len(values) < len(columns):
             values = [*values, *([""] * (len(columns) - len(values)))]
-        mapped = {column: (values[idx] if idx < len(values) else "") for idx, column in enumerate(columns)}
+        mapped = {
+            column: (values[idx] if idx < len(values) else "") for idx, column in enumerate(columns)
+        }
         raw_rows.append(mapped)
 
     if not raw_rows:
@@ -126,7 +124,8 @@ def ingest_csv(filename: str, content: bytes) -> DatasetSummary:
         conn.execute(f'CREATE TABLE "{table_name}" ({column_ddl})')
 
         placeholders = ", ".join("?" for _ in columns)
-        insert_sql = f'INSERT INTO "{table_name}" ({", ".join(f"\"{c}\"" for c in columns)}) VALUES ({placeholders})'
+        quoted_columns = ", ".join(f'"{column}"' for column in columns)
+        insert_sql = f'INSERT INTO "{table_name}" ({quoted_columns}) VALUES ({placeholders})'
         conn.executemany(insert_sql, ([row.get(col) for col in columns] for row in normalized_rows))
 
     created_at = utc_now_iso()

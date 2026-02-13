@@ -77,7 +77,9 @@ class Settings(BaseSettings):
     llm_enabled: bool = Field(default=True, alias="LLM_ENABLED")
     llm_max_usd_per_request: float = Field(default=0.03, alias="LLM_MAX_USD_PER_REQUEST")
     llm_max_usd_per_day: float = Field(default=2.0, alias="LLM_MAX_USD_PER_DAY")
-    llm_estimated_completion_tokens: int = Field(default=600, alias="LLM_ESTIMATED_COMPLETION_TOKENS")
+    llm_estimated_completion_tokens: int = Field(
+        default=600, alias="LLM_ESTIMATED_COMPLETION_TOKENS"
+    )
 
     llm_price_prompt_per_1k: float = 0.001
     llm_price_completion_per_1k: float = 0.002

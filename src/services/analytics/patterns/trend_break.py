@@ -15,13 +15,17 @@ def build_trend_break_detection(
 
     plan = PatternPlan(name="trend_break_detection")
     if not metric:
-        plan.diagnostics.append({"code": "MISSING_METRIC", "message": "No numeric metric column found"})
+        plan.diagnostics.append(
+            {"code": "MISSING_METRIC", "message": "No numeric metric column found"}
+        )
         return plan
     if not time_col:
-        plan.diagnostics.append({"code": "MISSING_TIME_COLUMN", "message": "No time-like column found"})
+        plan.diagnostics.append(
+            {"code": "MISSING_TIME_COLUMN", "message": "No time-like column found"}
+        )
         return plan
 
-    signal_sql = f'''
+    signal_sql = f"""
 WITH daily AS (
   SELECT DATE("{time_col}") AS dt, SUM(CAST("{metric}" AS REAL)) AS metric_value
   FROM "{table_name}"
@@ -46,9 +50,9 @@ SELECT
     WHEN ABS((SELECT AVG(metric_value) FROM recent) - (SELECT AVG(metric_value) FROM baseline)) >= 0.15 * ABS((SELECT AVG(metric_value) FROM baseline)) THEN 'trend_break'
     ELSE 'stable'
   END AS trend_signal
-'''.strip()
+""".strip()
 
-    series_sql = f'''
+    series_sql = f"""
 SELECT
   DATE("{time_col}") AS x,
   SUM(CAST("{metric}" AS REAL)) AS y
@@ -56,7 +60,7 @@ FROM "{table_name}"
 GROUP BY x
 ORDER BY x DESC
 LIMIT 30
-'''.strip()
+""".strip()
 
     plan.queries.append({"label": "Trend break detection", "query": signal_sql})
     plan.queries.append({"label": "Trend series", "query": series_sql})

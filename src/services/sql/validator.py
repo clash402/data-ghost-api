@@ -64,13 +64,17 @@ def validate_safe_select(sql: str) -> ValidationResult:
         return ValidationResult(is_valid=False, reason="Only top-level SELECT queries are allowed")
 
     for node in parsed.walk():
-        if isinstance(node, (exp.Delete, exp.Update, exp.Drop, exp.Insert, exp.Create, exp.Command, exp.Alter)):
+        if isinstance(
+            node, (exp.Delete, exp.Update, exp.Drop, exp.Insert, exp.Create, exp.Command, exp.Alter)
+        ):
             return ValidationResult(is_valid=False, reason=f"Forbidden SQL node: {node.key}")
 
     return ValidationResult(is_valid=True)
 
 
-def validate_sql_references(sql: str, *, table_name: str, allowed_columns: list[str]) -> ValidationResult:
+def validate_sql_references(
+    sql: str, *, table_name: str, allowed_columns: list[str]
+) -> ValidationResult:
     stripped = sql.strip()
     if not stripped:
         return ValidationResult(is_valid=False, reason="Empty SQL")
@@ -86,10 +90,12 @@ def validate_sql_references(sql: str, *, table_name: str, allowed_columns: list[
         table_pattern = re.compile(
             rf"\b(from|join)\s+((\"{re.escape(table_name.lower())}\")|{re.escape(table_name.lower())})\b"
         )
-        if re.search(r"\b(from|join)\b", lowered, re.IGNORECASE) and not table_pattern.search(lowered):
+        if re.search(r"\b(from|join)\b", lowered, re.IGNORECASE) and not table_pattern.search(
+            lowered
+        ):
             return ValidationResult(
                 is_valid=False,
-                reason=f"Query must reference table \"{table_name}\".",
+                reason=f'Query must reference table "{table_name}".',
             )
         return ValidationResult(is_valid=True)
 
@@ -102,7 +108,7 @@ def validate_sql_references(sql: str, *, table_name: str, allowed_columns: list[
     if not table_refs:
         return ValidationResult(
             is_valid=False,
-            reason=f"Query must reference dataset table \"{table_name}\".",
+            reason=f'Query must reference dataset table "{table_name}".',
         )
     invalid_tables = [name for name in table_refs if name != table_name]
     if invalid_tables:
