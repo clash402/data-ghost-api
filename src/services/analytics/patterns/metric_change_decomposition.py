@@ -1,6 +1,11 @@
 from __future__ import annotations
 
-from src.services.analytics.helpers import infer_top_n, pick_dimension_columns, pick_metric_column, pick_time_column
+from src.services.analytics.helpers import (
+    infer_top_n,
+    pick_dimension_columns,
+    pick_metric_column,
+    pick_time_column,
+)
 from src.services.analytics.patterns.types import PatternPlan
 
 
@@ -17,17 +22,23 @@ def build_metric_change_decomposition(
 
     plan = PatternPlan(name="metric_change_decomposition")
     if not metric:
-        plan.diagnostics.append({"code": "MISSING_METRIC", "message": "No numeric metric column found"})
+        plan.diagnostics.append(
+            {"code": "MISSING_METRIC", "message": "No numeric metric column found"}
+        )
         return plan
     if not time_col:
-        plan.diagnostics.append({"code": "MISSING_TIME_COLUMN", "message": "No time-like column found"})
+        plan.diagnostics.append(
+            {"code": "MISSING_TIME_COLUMN", "message": "No time-like column found"}
+        )
         return plan
     if not dimensions:
-        plan.diagnostics.append({"code": "MISSING_DIMENSION", "message": "No segment dimension available"})
+        plan.diagnostics.append(
+            {"code": "MISSING_DIMENSION", "message": "No segment dimension available"}
+        )
         return plan
 
     dimension = dimensions[0]
-    sql = f'''
+    sql = f"""
 WITH max_date AS (
   SELECT MAX(DATE("{time_col}")) AS max_dt FROM "{table_name}"
 ),
@@ -60,7 +71,7 @@ SELECT
 FROM pivoted
 ORDER BY ABS(contribution) DESC
 LIMIT {top_n}
-'''.strip()
+""".strip()
 
     plan.queries.append(
         {

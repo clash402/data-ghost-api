@@ -17,22 +17,30 @@ def validate_results(
     non_empty = sum(1 for item in executed_results if item.get("rows"))
 
     if planned_count == 0:
-        diagnostics.append({"code": "NO_ANALYSIS_PLAN", "message": "No runnable analyses were produced"})
+        diagnostics.append(
+            {"code": "NO_ANALYSIS_PLAN", "message": "No runnable analyses were produced"}
+        )
         return {
             "level": "insufficient",
             "reasons": ["No analysis plan could be generated from current dataset/question."],
         }, diagnostics
 
     if executed_count == 0:
-        diagnostics.append({"code": "NO_QUERY_RESULTS", "message": "All planned analyses failed to execute"})
+        diagnostics.append(
+            {"code": "NO_QUERY_RESULTS", "message": "All planned analyses failed to execute"}
+        )
         return {
             "level": "insufficient",
-            "reasons": ["No query executed successfully. Fix dataset schema or question specificity."],
+            "reasons": [
+                "No query executed successfully. Fix dataset schema or question specificity."
+            ],
         }, diagnostics
 
     success_rate = executed_count / planned_count
     if non_empty == 0:
-        diagnostics.append({"code": "EMPTY_RESULTS", "message": "Queries ran but returned empty result sets"})
+        diagnostics.append(
+            {"code": "EMPTY_RESULTS", "message": "Queries ran but returned empty result sets"}
+        )
         return {
             "level": "low",
             "reasons": ["Queries returned no rows; conclusions are weak."],
@@ -51,13 +59,17 @@ def validate_results(
     if has_partial_failure:
         return {
             "level": "insufficient",
-            "reasons": ["Partial validation failure detected; use results as directional evidence only."],
+            "reasons": [
+                "Partial validation failure detected; use results as directional evidence only."
+            ],
         }, diagnostics
 
     if execution_errors:
         return {
             "level": "insufficient",
-            "reasons": ["Some planned analyses failed validation/execution; treat findings as partial."],
+            "reasons": [
+                "Some planned analyses failed validation/execution; treat findings as partial."
+            ],
         }, diagnostics
 
     if success_rate >= 0.8 and not execution_errors:

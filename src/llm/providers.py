@@ -67,8 +67,12 @@ class OpenAIProvider(BaseProvider):
     def call(self, model: str, prompt: LlmPrompt) -> LlmCallResult:
         from langchain_core.messages import HumanMessage, SystemMessage
 
-        chat = self._chat_class(model=model, api_key=self.settings.llm_openai_api_key, temperature=0)
-        output = chat.invoke([SystemMessage(content=prompt.system), HumanMessage(content=prompt.user)])
+        chat = self._chat_class(
+            model=model, api_key=self.settings.llm_openai_api_key, temperature=0
+        )
+        output = chat.invoke(
+            [SystemMessage(content=prompt.system), HumanMessage(content=prompt.user)]
+        )
         text = str(output.content)
         prompt_tokens = len((prompt.system + "\n" + prompt.user).split())
         completion_tokens = len(text.split())
@@ -97,8 +101,12 @@ class AnthropicProvider(BaseProvider):
     def call(self, model: str, prompt: LlmPrompt) -> LlmCallResult:
         from langchain_core.messages import HumanMessage, SystemMessage
 
-        chat = self._chat_class(model=model, api_key=self.settings.llm_anthropic_api_key, temperature=0)
-        output = chat.invoke([SystemMessage(content=prompt.system), HumanMessage(content=prompt.user)])
+        chat = self._chat_class(
+            model=model, api_key=self.settings.llm_anthropic_api_key, temperature=0
+        )
+        output = chat.invoke(
+            [SystemMessage(content=prompt.system), HumanMessage(content=prompt.user)]
+        )
         text = str(output.content)
         prompt_tokens = len((prompt.system + "\n" + prompt.user).split())
         completion_tokens = len(text.split())

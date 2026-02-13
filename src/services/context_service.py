@@ -45,7 +45,9 @@ def _extract_text(filename: str, content: bytes) -> str:
     raise ValueError("Unsupported context file type. Use PDF, TXT, or MD")
 
 
-def ingest_context_doc(filename: str, content_type: str | None, content: bytes) -> ContextDocSummary:
+def ingest_context_doc(
+    filename: str, content_type: str | None, content: bytes
+) -> ContextDocSummary:
     text = _extract_text(filename, content)
     chunks = chunk_text(text)
     if not chunks:
@@ -53,11 +55,23 @@ def ingest_context_doc(filename: str, content_type: str | None, content: bytes) 
 
     created_at = utc_now_iso()
     doc_id = str(uuid.uuid4())
-    insert_docs_meta(doc_id=doc_id, filename=filename, content_type=content_type, chunks=len(chunks), created_at=created_at)
+    insert_docs_meta(
+        doc_id=doc_id,
+        filename=filename,
+        content_type=content_type,
+        chunks=len(chunks),
+        created_at=created_at,
+    )
 
     for idx, chunk in enumerate(chunks):
         embedding = embed_text(chunk)
-        insert_vector_chunk(doc_id=doc_id, chunk_index=idx, content=chunk, embedding=embedding, created_at=created_at)
+        insert_vector_chunk(
+            doc_id=doc_id,
+            chunk_index=idx,
+            content=chunk,
+            embedding=embedding,
+            created_at=created_at,
+        )
 
     return ContextDocSummary(
         doc_id=doc_id,

@@ -21,7 +21,9 @@ async def _read_limited_upload(file: UploadFile, *, max_bytes: int) -> bytes:
             break
         total += len(chunk)
         if total > max_bytes:
-            raise HTTPException(status_code=413, detail="Uploaded file exceeds the configured size limit")
+            raise HTTPException(
+                status_code=413, detail="Uploaded file exceeds the configured size limit"
+            )
         chunks.append(chunk)
     return b"".join(chunks)
 
@@ -32,7 +34,9 @@ async def upload_dataset(file: UploadFile = File(...)) -> DatasetUploadResponse:
         raise HTTPException(status_code=400, detail="Dataset upload requires a CSV file")
 
     settings = get_settings()
-    content = await _read_limited_upload(file, max_bytes=settings.dataset_max_upload_mb * 1024 * 1024)
+    content = await _read_limited_upload(
+        file, max_bytes=settings.dataset_max_upload_mb * 1024 * 1024
+    )
     try:
         summary = ingest_csv(file.filename, content)
     except ValueError as exc:
@@ -50,7 +54,9 @@ async def upload_dataset(file: UploadFile = File(...)) -> DatasetUploadResponse:
 @router.post("/context", response_model=ContextUploadResponse)
 async def upload_context(file: UploadFile = File(...)) -> ContextUploadResponse:
     settings = get_settings()
-    content = await _read_limited_upload(file, max_bytes=settings.context_max_upload_mb * 1024 * 1024)
+    content = await _read_limited_upload(
+        file, max_bytes=settings.context_max_upload_mb * 1024 * 1024
+    )
     try:
         result = ingest_context_doc(file.filename, file.content_type, content)
     except ValueError as exc:

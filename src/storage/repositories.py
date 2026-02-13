@@ -55,7 +55,9 @@ def get_dataset_meta() -> dict[str, Any] | None:
         }
 
 
-def insert_docs_meta(doc_id: str, filename: str, content_type: str | None, chunks: int, created_at: str) -> None:
+def insert_docs_meta(
+    doc_id: str, filename: str, content_type: str | None, chunks: int, created_at: str
+) -> None:
     with get_connection() as conn:
         conn.execute(
             """
