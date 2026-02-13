@@ -124,7 +124,8 @@ def ingest_csv(filename: str, content: bytes) -> DatasetSummary:
         conn.execute(f'CREATE TABLE "{table_name}" ({column_ddl})')
 
         placeholders = ", ".join("?" for _ in columns)
-        insert_sql = f'INSERT INTO "{table_name}" ({", ".join(f"\"{c}\"" for c in columns)}) VALUES ({placeholders})'
+        quoted_columns = ", ".join(f'"{column}"' for column in columns)
+        insert_sql = f'INSERT INTO "{table_name}" ({quoted_columns}) VALUES ({placeholders})'
         conn.executemany(insert_sql, ([row.get(col) for col in columns] for row in normalized_rows))
 
     created_at = utc_now_iso()
