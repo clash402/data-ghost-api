@@ -113,6 +113,36 @@ def test_speak_success_returns_audio_mpeg_bytes(monkeypatch: pytest.MonkeyPatch)
     assert response.content == b"audio-bytes"
 
 
+def test_speak_reuses_cached_audio_for_identical_text_and_voice(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("ELEVENLABS_API_KEY", "test-elevenlabs-key")
+    monkeypatch.setenv("ELEVENLABS_VOICE_ID", "voice_123")
+    monkeypatch.setenv("VOICE_CACHE_TTL_SECONDS", "600")
+
+    calls = {"count": 0}
+
+    class _FakeTextToSpeech:
+        def convert(self, **kwargs):
+            calls["count"] += 1
+            return [b"cached-audio-bytes"]
+
+    class _FakeElevenLabsClient:
+        text_to_speech = _FakeTextToSpeech()
+
+    monkeypatch.setattr(
+        "src.integrations.elevenlabs_speech._build_elevenlabs_client",
+        lambda api_key: _FakeElevenLabsClient(),
+    )
+
+    first = client.post("/voice/speak", json={"text": "hello from cache"})
+    second = client.post("/voice/speak", json={"text": "hello from cache"})
+
+    assert first.status_code == 200
+    assert second.status_code == 200
+    assert first.content == b"cached-audio-bytes"
+    assert second.content == b"cached-audio-bytes"
+    assert calls["count"] == 1
+
+
 def test_speak_rejects_empty_text(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("ELEVENLABS_API_KEY", "test-elevenlabs-key")
     monkeypatch.setenv("ELEVENLABS_VOICE_ID", "voice_123")
