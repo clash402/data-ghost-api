@@ -4,10 +4,22 @@ from functools import lru_cache
 import json
 import os
 from pathlib import Path
+from urllib.parse import urlsplit
 
 from pydantic import Field, field_validator
 
 ENV_FILES = (".env", ".env.local")
+
+
+def _normalize_origin(raw_origin: str) -> str:
+    origin = raw_origin.strip().rstrip("/")
+    if not origin:
+        return ""
+
+    parsed = urlsplit(origin)
+    if parsed.scheme and parsed.netloc:
+        return f"{parsed.scheme.lower()}://{parsed.netloc.lower()}"
+    return origin
 
 
 def _load_env_files(paths: tuple[str, ...]) -> dict[str, str]:
@@ -131,10 +143,12 @@ class Settings(BaseSettings):
                 try:
                     loaded = json.loads(parsed)
                     if isinstance(loaded, list):
-                        return [str(item).strip() for item in loaded if str(item).strip()]
+                        normalized = (_normalize_origin(str(item)) for item in loaded)
+                        return [origin for origin in normalized if origin]
                 except json.JSONDecodeError:
                     pass
-            return [item.strip() for item in parsed.split(",") if item.strip()]
+            normalized = (_normalize_origin(item) for item in parsed.split(","))
+            return [origin for origin in normalized if origin]
         return value
 
 

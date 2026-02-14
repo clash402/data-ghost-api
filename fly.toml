@@ -8,6 +8,7 @@ primary_region = "ord"
   APP_ENV = "prod"
   APP_HOST = "0.0.0.0"
   APP_PORT = "8080"
+  CORS_ALLOW_ORIGINS = "https://data-ghost-web.vercel.app"
 
   # Persist SQLite dataset + metadata on Fly volume.
   DATA_DIR = "/data"
