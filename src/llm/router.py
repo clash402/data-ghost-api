@@ -4,7 +4,12 @@ from datetime import UTC, datetime
 import json
 
 from src.core.settings import get_settings
-from src.llm.providers import LlmPrompt, persist_ledger, provider_from_env
+from src.llm.providers import (
+    LlmPrompt,
+    LlmProviderConfigurationError,
+    persist_ledger,
+    provider_from_env,
+)
 from src.llm.types import LlmCallResult
 from src.storage.repositories import get_global_spend_usd_since, get_request_spend_usd
 
@@ -17,10 +22,14 @@ class LlmBudgetExceededError(Exception):
     pass
 
 
+class LlmProviderError(Exception):
+    pass
+
+
 class ModelRouter:
     def __init__(self) -> None:
         self.settings = get_settings()
-        self.provider = provider_from_env()
+        self.provider = None
 
     def _estimate_price(self, prompt_tokens: int, completion_tokens: int) -> float:
         prompt = (prompt_tokens / 1000) * self.settings.llm_price_prompt_per_1k
@@ -73,9 +82,21 @@ class ModelRouter:
         estimated_usd = self._estimate_price(prompt_tokens, estimated_completion_tokens)
         self._enforce_budget(request_id=request_id, estimated_usd=estimated_usd)
 
-        result = self.provider.call(
-            model=model, prompt=LlmPrompt(system=system_prompt, user=user_prompt)
-        )
+        if self.provider is None:
+            try:
+                self.provider = provider_from_env()
+            except Exception as exc:
+                raise LlmProviderError(f"Failed to initialize LLM provider: {exc}") from exc
+
+        try:
+            result = self.provider.call(
+                model=model, prompt=LlmPrompt(system=system_prompt, user=user_prompt)
+            )
+        except LlmProviderConfigurationError as exc:
+            raise LlmProviderError(str(exc)) from exc
+        except Exception as exc:
+            raise LlmProviderError(f"LLM provider call failed: {exc}") from exc
+
         persist_ledger(
             request_id=request_id,
             app=app,

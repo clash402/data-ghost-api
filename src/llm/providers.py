@@ -10,6 +10,10 @@ from src.storage.repositories import insert_cost_ledger
 from src.utils.time import utc_now_iso
 
 
+class LlmProviderConfigurationError(Exception):
+    pass
+
+
 @dataclass
 class LlmPrompt:
     system: str
@@ -67,6 +71,10 @@ class OpenAIProvider(BaseProvider):
     def call(self, model: str, prompt: LlmPrompt) -> LlmCallResult:
         from langchain_core.messages import HumanMessage, SystemMessage
 
+        if not self.settings.llm_openai_api_key:
+            raise LlmProviderConfigurationError(
+                "OpenAI provider is selected but OPENAI_API_KEY is not configured."
+            )
         chat = self._chat_class(
             model=model, api_key=self.settings.llm_openai_api_key, temperature=0
         )
@@ -101,6 +109,10 @@ class AnthropicProvider(BaseProvider):
     def call(self, model: str, prompt: LlmPrompt) -> LlmCallResult:
         from langchain_core.messages import HumanMessage, SystemMessage
 
+        if not self.settings.llm_anthropic_api_key:
+            raise LlmProviderConfigurationError(
+                "Anthropic provider is selected but ANTHROPIC_API_KEY is not configured."
+            )
         chat = self._chat_class(
             model=model, api_key=self.settings.llm_anthropic_api_key, temperature=0
         )

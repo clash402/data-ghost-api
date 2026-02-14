@@ -50,3 +50,16 @@ def test_ask_returns_503_when_llm_is_disabled(monkeypatch) -> None:
     response = client.post("/ask", json={"question": "How many rows are in this dataset?"})
     assert response.status_code == 503
     assert "llm calls are disabled" in response.json()["detail"].lower()
+
+
+def test_ask_returns_503_when_provider_key_missing(monkeypatch) -> None:
+    monkeypatch.setenv("LLM_ENABLED", "true")
+    monkeypatch.setenv("LLM_PROVIDER", "openai")
+    monkeypatch.setenv("OPENAI_API_KEY", "")
+    get_settings.cache_clear()
+
+    _upload_simple_dataset()
+
+    response = client.post("/ask", json={"question": "How many rows are in this dataset?"})
+    assert response.status_code == 503
+    assert "openai provider is selected" in response.json()["detail"].lower()

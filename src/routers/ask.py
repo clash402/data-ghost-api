@@ -5,8 +5,9 @@ import uuid
 from fastapi import APIRouter, HTTPException, Request
 
 from src.agents.ask_graph import run_ask_pipeline
+from src.core.logging import get_logger
 from src.core.settings import get_settings
-from src.llm.router import LlmBudgetExceededError, LlmDisabledError
+from src.llm.router import LlmBudgetExceededError, LlmDisabledError, LlmProviderError
 from src.schemas.api import AskRequest, AskResponse
 from src.services.ask_cache_service import (
     build_ask_cache_key,
@@ -22,6 +23,7 @@ from src.services.request_log_service import log_ask_request
 from src.storage.repositories import get_dataset_meta
 
 router = APIRouter(tags=["ask"])
+logger = get_logger(__name__)
 
 
 @router.post("/ask", response_model=AskResponse)
@@ -70,6 +72,13 @@ def ask(payload: AskRequest, request: Request) -> AskResponse:
         raise HTTPException(status_code=429, detail=str(exc)) from exc
     except LlmDisabledError as exc:
         raise HTTPException(status_code=503, detail=str(exc)) from exc
+    except LlmProviderError as exc:
+        raise HTTPException(status_code=503, detail=str(exc)) from exc
+    except Exception as exc:
+        logger.exception("Unhandled error during ask pipeline", extra={"request_id": request_id})
+        raise HTTPException(
+            status_code=500, detail="Internal error while processing question."
+        ) from exc
 
     needs_clarification = bool(result.get("needs_clarification"))
 
